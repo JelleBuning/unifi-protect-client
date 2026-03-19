@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "UnifiDesktopAlerts (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "UnifiDesktopAlerts (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

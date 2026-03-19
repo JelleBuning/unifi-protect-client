@@ -24,17 +24,10 @@ public sealed partial class MainWindow
         ViewModel = new MainViewModel(this, configuration, DispatcherQueue.GetForCurrentThread());
         RootGrid.DataContext = ViewModel;
 
-        VisibilityChanged += OnVisibilityChanged;
         Closed += OnWindowClosed;
     }
 
-    private void OnVisibilityChanged(object sender, WindowVisibilityChangedEventArgs args)
-    {
-        if (!args.Visible)
-            ViewModel.StopStream();
-        else
-            ViewModel.StartStream();
-    }
+    public void ShowFromBackground() => DispatcherQueue.TryEnqueue(() => this.Show());
 
     private void OnWindowClosed(object sender, WindowEventArgs args)
     {

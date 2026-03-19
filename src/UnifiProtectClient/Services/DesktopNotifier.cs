@@ -32,13 +32,10 @@ public class DesktopNotifier : IDesktopNotifier
     private static AppNotification BuildAppNotification(IAlarmEvent alarmEvent)
     {
         var alarm = alarmEvent.Alarm;
-        var trigger = alarm.Triggers.FirstOrDefault();
-        var title = $"UniFi Alarm: {alarm.Name}";
-        var body = $"Device: {trigger?.Device ?? "N/A"}";
-
+        var title = $"Event triggered ({alarm.Name})";
+        
         var notificationBuilder = new AppNotificationBuilder()
             .AddText(title)
-            .AddText(body)
             .SetHeroImage(new Uri("https://i.pcmag.com/imagery/reviews/05bQWLMCbAgAqIYBfDbdbHB-3.fit_lim.size_810x456.v_1569469953.jpg"));
         return notificationBuilder.BuildNotification();
     }

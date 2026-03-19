@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
 using UniFiApiProtectWebhookDotnet;
 using UnifiProtectClient.Services.Interfaces;
+using UnifiProtectClient.Views;
 
 namespace UnifiProtectClient.Controllers;
 
@@ -11,7 +12,8 @@ namespace UnifiProtectClient.Controllers;
 [Route("webhook")]
 public class UniFiWebhookController(
     ILogger<UniFiWebhookController> logger,
-    IDesktopNotifier desktopNotifier
+    IDesktopNotifier desktopNotifier,
+    MainWindow mainWindow
 ) : ControllerBase
 {
     [HttpPost]
@@ -24,8 +26,9 @@ public class UniFiWebhookController(
             {
                 return BadRequest("Invalid or missing alarm data.");
             }
-            
+
             desktopNotifier.Notify(alarmEvent);
+            mainWindow.ShowFromBackground();
             return NoContent();
         }
         catch (Exception ex)

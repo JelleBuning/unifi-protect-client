@@ -16,6 +16,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
 {
     private readonly MainWindow _mainWindow;
     private readonly RtspVideoPlayer _player;
+    private readonly SnapshotService _snapshotService;
     private readonly DispatcherQueue _dispatcherQueue;
     private WriteableBitmap? _videoBitmap;
     private bool _updatePending;
@@ -40,14 +41,16 @@ public partial class MainViewModel : ObservableObject, IDisposable
         _dispatcherQueue = dispatcherQueue;
 
         var rtspFeed = configuration["RtspFeed"] ?? throw new Exception("RtspFeed not configured");
+        var snapshotPath = configuration["SnapshotPath"]
+            ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                            "UnifiProtectClient", "snapshot.jpg");
+
         _player = new RtspVideoPlayer(rtspFeed);
+        _snapshotService = new SnapshotService(snapshotPath);
         _player.FrameReady += OnFrameReady;
         _player.StatusChanged += OnStatusChanged;
+        _player.Start();
     }
-
-    public void StartStream() => _player.Start();
-
-    public void StopStream() => _player.Stop();
 
     private void OnStatusChanged(object? sender, string message)
     {
@@ -71,6 +74,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
                 using var stream = _videoBitmap!.PixelBuffer.AsStream();
                 stream.Write(frame.Pixels, 0, frame.DataLength);
                 _videoBitmap.Invalidate();
+                _snapshotService.CaptureFrame(frame.Width, frame.Height, frame.Pixels);
             }
             finally
             {
@@ -103,5 +107,6 @@ public partial class MainViewModel : ObservableObject, IDisposable
         _player.FrameReady -= OnFrameReady;
         _player.StatusChanged -= OnStatusChanged;
         _player.Dispose();
+        _snapshotService.Dispose();
     }
 }

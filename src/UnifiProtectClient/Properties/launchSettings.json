@@ -1,10 +1,11 @@
 {
   "profiles": {
-    "UnifiDesktopAlerts (Package)": {
-      "commandName": "MsixPackage"
+    "WSL": {
+      "commandName": "WSL2",
+      "distributionName": ""
     },
-    "UnifiDesktopAlerts (Unpackaged)": {
-      "commandName": "Project"
+    "UnifiProtectClient (Package)": {
+      "commandName": "MsixPackage"
     }
   }
 }

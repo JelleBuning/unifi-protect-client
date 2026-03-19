@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Windows.AppNotifications;
 using System;
 using UnifiProtectClient.Services;
 using UnifiProtectClient.Services.Interfaces;
@@ -48,6 +49,9 @@ public partial class App
             
             _mainWindow = host.Services.GetRequiredService<MainWindow>();
             _mainWindow.ShowInTaskbar();
+
+            AppNotificationManager.Default.NotificationInvoked += (_, _) => _mainWindow.ShowFromBackground();
+
             host.Start();
 
         }

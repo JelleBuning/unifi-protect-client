@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
-using System.Linq;
+using System.IO;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Windows.AppNotifications;
 using Microsoft.Windows.AppNotifications.Builder;
 using UniFiApiProtectWebhookDotnet.Abstraction;
@@ -8,14 +9,16 @@ using UnifiProtectClient.Services.Interfaces;
 
 namespace UnifiProtectClient.Services;
 
-public class DesktopNotifier : IDesktopNotifier
+public class DesktopNotifier(IConfiguration configuration) : IDesktopNotifier
 {
+    private readonly string _snapshotPath = configuration["SnapshotPath"]
+        ?? Path.Combine(AppContext.BaseDirectory, "snapshots", "snapshot.jpg");
+
     public void Notify(IAlarmEvent alarmEvent)
     {
         try
         {
             var notification = BuildAppNotification(alarmEvent);
-            AppNotificationManager.Default.NotificationInvoked += DefaultOnNotificationInvoked;
             AppNotificationManager.Default.Show(notification);
         }
         catch (Exception ex)
@@ -24,19 +27,16 @@ public class DesktopNotifier : IDesktopNotifier
         }
     }
 
-    private void DefaultOnNotificationInvoked(AppNotificationManager sender, AppNotificationActivatedEventArgs args)
+    private AppNotification BuildAppNotification(IAlarmEvent alarmEvent)
     {
-        throw new NotImplementedException();
-    }
+        var title = $"Event triggered ({alarmEvent.Alarm.Name})";
 
-    private static AppNotification BuildAppNotification(IAlarmEvent alarmEvent)
-    {
-        var alarm = alarmEvent.Alarm;
-        var title = $"Event triggered ({alarm.Name})";
-        
-        var notificationBuilder = new AppNotificationBuilder()
-            .AddText(title)
-            .SetHeroImage(new Uri("https://i.pcmag.com/imagery/reviews/05bQWLMCbAgAqIYBfDbdbHB-3.fit_lim.size_810x456.v_1569469953.jpg"));
-        return notificationBuilder.BuildNotification();
+        var builder = new AppNotificationBuilder().AddText(title);
+
+        var heroPath = SnapshotService.GetHeroPath(_snapshotPath);
+        if (File.Exists(heroPath))
+            builder.SetHeroImage(new Uri(heroPath));
+
+        return builder.BuildNotification();
     }
 }

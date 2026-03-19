@@ -21,19 +21,17 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private WriteableBitmap? _videoBitmap;
     private bool _updatePending;
 
-    private WriteableBitmap? _videoSource;
     public WriteableBitmap? VideoSource
     {
-        get => _videoSource;
-        private set => SetProperty(ref _videoSource, value);
+        get;
+        private set => SetProperty(ref field, value);
     }
 
-    private string _statusMessage = "Initializing...";
     public string StatusMessage
     {
-        get => _statusMessage;
-        private set => SetProperty(ref _statusMessage, value);
-    }
+        get;
+        private set => SetProperty(ref field, value);
+    } = "Initializing...";
 
     public MainViewModel(MainWindow mainWindow, IConfiguration configuration, DispatcherQueue dispatcherQueue)
     {
@@ -42,8 +40,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
         var rtspFeed = configuration["RtspFeed"] ?? throw new Exception("RtspFeed not configured");
         var snapshotPath = configuration["SnapshotPath"]
-            ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                            "UnifiProtectClient", "snapshot.jpg");
+            ?? Path.Combine(AppContext.BaseDirectory, "snapshots", "snapshot.jpg");
 
         _player = new RtspVideoPlayer(rtspFeed);
         _snapshotService = new SnapshotService(snapshotPath);

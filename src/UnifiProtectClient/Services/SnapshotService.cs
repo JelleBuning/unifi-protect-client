@@ -21,7 +21,6 @@ public sealed class SnapshotService : IDisposable
         _nextSaveTicks = DateTime.UtcNow.Ticks;
     }
 
-    /// <summary>Returns the landscape-cropped hero image path derived from the snapshot path.</summary>
     public static string GetHeroPath(string snapshotPath) =>
         Path.Combine(
             Path.GetDirectoryName(snapshotPath)!,

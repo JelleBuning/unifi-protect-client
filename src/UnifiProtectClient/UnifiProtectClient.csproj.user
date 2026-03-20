@@ -5,6 +5,14 @@
   </PropertyGroup>
   <PropertyGroup>
     <ActiveDebugProfile>UnifiProtectClient (Package)</ActiveDebugProfile>
+    <Source>C:\Users\JelleBuning\Downloads\logo.pdf</Source>
+    <SmallTileSource>C:\Users\JelleBuning\Downloads\logo.pdf</SmallTileSource>
+    <MediumTileSource>C:\Users\JelleBuning\Downloads\logo.pdf</MediumTileSource>
+    <WideTileSource>C:\Users\JelleBuning\Downloads\logo.pdf</WideTileSource>
+    <LargeTileSource>C:\Users\JelleBuning\Downloads\logo.pdf</LargeTileSource>
+    <AppIconSource>C:\Users\JelleBuning\Downloads\logo.pdf</AppIconSource>
+    <SplashScreenSource>C:\Users\JelleBuning\Downloads\logo.pdf</SplashScreenSource>
+    <PackageLogoSource>C:\Users\JelleBuning\Downloads\logo.pdf</PackageLogoSource>
   </PropertyGroup>
   <ItemGroup>
     <None Update="App.xaml">

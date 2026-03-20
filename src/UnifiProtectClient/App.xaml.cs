@@ -62,5 +62,5 @@ public partial class App
         }
     }
 
-    public void OnToastClicked() => _mainWindow.Show();
+    public void OnToastClicked() => _mainWindow.BringToFront();
 }

@@ -12,11 +12,7 @@
 		<Nullable>enable</Nullable>
 		<DefineConstants>$(DefineConstants);DISABLE_XAML_GENERATED_MAIN</DefineConstants>
 	</PropertyGroup>
-	<ItemGroup>
-		<Content Remove="Assets\TempDoorbell.png" />
-		<Content Remove="Assets\tray-icon.ico" />
-	</ItemGroup>
-
+	
 	<ItemGroup>
 		<Content Include="Assets\*" />
 	</ItemGroup>

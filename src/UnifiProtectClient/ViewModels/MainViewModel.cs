@@ -97,7 +97,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     }
 
     [RelayCommand]
-    public void LeftClick() => _mainWindow.Show();
+    public void LeftClick() => _mainWindow.BringToFront();
 
     public void Dispose()
     {

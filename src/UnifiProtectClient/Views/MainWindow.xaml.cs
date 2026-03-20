@@ -3,9 +3,11 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.UI;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Windowing;
+using System.Runtime.InteropServices;
 using UnifiProtectClient.ViewModels;
 using Windows.Graphics;
 using Microsoft.UI.Xaml;
+using WinRT.Interop;
 
 namespace UnifiProtectClient.Views;
 
@@ -27,7 +29,22 @@ public sealed partial class MainWindow
         Closed += OnWindowClosed;
     }
 
-    public void ShowFromBackground() => DispatcherQueue.TryEnqueue(() => this.Show());
+    public void BringToFront()
+    {
+        var hwnd = WindowNative.GetWindowHandle(this);
+        ShowWindow(hwnd, SW_RESTORE);
+        SetForegroundWindow(hwnd);
+    }
+
+    public void ShowFromBackground() => DispatcherQueue.TryEnqueue(BringToFront);
+
+    [DllImport("user32.dll")]
+    private static extern bool ShowWindow(nint hWnd, int nCmdShow);
+
+    [DllImport("user32.dll")]
+    private static extern bool SetForegroundWindow(nint hWnd);
+
+    private const int SW_RESTORE = 9;
 
     private void OnWindowClosed(object sender, WindowEventArgs args)
     {

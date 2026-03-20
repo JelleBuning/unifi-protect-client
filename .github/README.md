@@ -56,7 +56,7 @@ Many Unifi Protect users find it difficult to keep track of doorbell activity wh
 
 ## Getting Started
 
-Setting up the Unifi Protect Client on your machine is straightforward. By using the Docker-based deployment, you can ensure all dependencies are handled automatically.
+Setting up the Unifi Protect Client on your machine is straightforward.
 
 ### Installation
 

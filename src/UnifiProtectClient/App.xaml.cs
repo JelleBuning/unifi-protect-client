@@ -16,7 +16,7 @@ namespace UnifiProtectClient;
 
 public partial class App
 {
-    private readonly MainWindow _mainWindow = null!;
+    private readonly MainWindow _mainWindow;
 
     public App()
     {

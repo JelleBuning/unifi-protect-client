@@ -23,6 +23,8 @@ public sealed class ProtectEventStream(IOptions<UnifiProtectOptions> options) : 
         [EnumeratorCancellation] CancellationToken ct = default)
     {
         var wsUri = BuildWebSocketUri();
+        Debug.WriteLine($"[ProtectEventStream] Connecting to {wsUri}");
+
         var backoffMs = 1_000;
 
         while (!ct.IsCancellationRequested)
@@ -34,12 +36,12 @@ public sealed class ProtectEventStream(IOptions<UnifiProtectOptions> options) : 
             bool connected = false;
             bool cancelled = false;
 
-            // Connect without yielding, so try-catch is allowed here.
             try
             {
                 await ws.ConnectAsync(wsUri, ct);
                 connected = true;
                 backoffMs = 1_000;
+                Debug.WriteLine($"[ProtectEventStream] Connected to {wsUri}");
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested)
             {
@@ -47,16 +49,17 @@ public sealed class ProtectEventStream(IOptions<UnifiProtectOptions> options) : 
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[ProtectEventStream] Connect failed: {ex.Message}");
+                Debug.WriteLine($"[ProtectEventStream] Connect failed ({ex.GetType().Name}): {ex.Message} — URI: {wsUri}");
             }
 
             if (cancelled) yield break;
 
-            // Stream events outside a try-catch-with-yield restriction.
             if (connected)
             {
                 await foreach (var ev in ReceiveAsync(ws, ct))
                     yield return ev;
+
+                Debug.WriteLine($"[ProtectEventStream] Disconnected (ws state: {ws.State}), retrying in {backoffMs}ms");
             }
 
             if (ct.IsCancellationRequested) yield break;
@@ -127,6 +130,8 @@ public sealed class ProtectEventStream(IOptions<UnifiProtectOptions> options) : 
             var start  = item.GetProperty("start").GetInt64();
             var device = item.GetProperty("device").GetString() ?? string.Empty;
 
+            Debug.WriteLine($"[ProtectEventStream] Event: {updateType} {type} device={device}");
+
             long? end = item.TryGetProperty("end", out var endProp) && endProp.ValueKind != JsonValueKind.Null
                 ? endProp.GetInt64()
                 : null;
@@ -176,6 +181,7 @@ public sealed class ProtectEventStream(IOptions<UnifiProtectOptions> options) : 
         catch (Exception ex)
         {
             Debug.WriteLine($"[ProtectEventStream] Parse error: {ex.Message}");
+            Debug.WriteLine($"[ProtectEventStream] Raw JSON: {json[..Math.Min(json.Length, 500)]}");
             return null;
         }
     }

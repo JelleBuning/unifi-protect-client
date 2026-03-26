@@ -89,10 +89,13 @@ public partial class MainViewModel : ObservableObject, IDisposable
             var stream  = streams.FirstOrDefault()
                           ?? await _apiClient.CreateRtspsStreamAsync(camera.Id, ct);
 
+            // LibVLC 3.x cannot handle RTSPS (TLS) or SRTP.
+            // Convert to plain RTSP on the unencrypted media port (7447).
             var url = stream.Url
                 .Replace("rtsps://", "rtsp://")
-                .Replace("7441", "7447")
-                .Replace("?enableSrtp", "");
+                .Replace(":7441/", ":7447/")
+                .Replace("?enableSrtp", "")
+                .TrimEnd('?');
 
             _player = new RtspVideoPlayer(url);
             _player.FrameReady    += OnFrameReady;

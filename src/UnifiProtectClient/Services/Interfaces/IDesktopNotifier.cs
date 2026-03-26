@@ -1,8 +1,8 @@
-using UniFiApiProtectWebhookDotnet.Abstraction;
+using UnifiProtectClient.Domain.Events;
 
 namespace UnifiProtectClient.Services.Interfaces;
 
 public interface IDesktopNotifier
 {
-    void Notify(IAlarmEvent alarmEvent);
+    void Notify(ProtectEvent protectEvent, string cameraName);
 }

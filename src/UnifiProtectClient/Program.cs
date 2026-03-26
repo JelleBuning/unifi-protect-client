@@ -18,7 +18,7 @@ public class Program
 
         if (!isRedirect)
         {
-            Application.Start((p) =>
+            Microsoft.UI.Xaml.Application.Start((p) =>
             {
                 var context = new DispatcherQueueSynchronizationContext(
                     DispatcherQueue.GetForCurrentThread());

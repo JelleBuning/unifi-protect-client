@@ -5,9 +5,17 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
+using System.Threading;
+using System.Threading.Tasks;
+using UnifiProtectClient.Application.Options;
+using UnifiProtectClient.Application.Ports;
+using UnifiProtectClient.Domain.Events;
 using UnifiProtectClient.Services;
+using UnifiProtectClient.Services.Interfaces;
 using UnifiProtectClient.Views;
 
 namespace UnifiProtectClient.ViewModels;
@@ -15,11 +23,18 @@ namespace UnifiProtectClient.ViewModels;
 public partial class MainViewModel : ObservableObject, IDisposable
 {
     private readonly MainWindow _mainWindow;
-    private readonly RtspVideoPlayer _player;
+    private readonly IUnifiProtectApiClient _apiClient;
+    private readonly IProtectEventStream _eventStream;
+    private readonly IDesktopNotifier _notifier;
+    private readonly EventNotificationSettings _eventSettings;
     private readonly SnapshotService _snapshotService;
     private readonly DispatcherQueue _dispatcherQueue;
+    private readonly CancellationTokenSource _cts = new();
+
     private WriteableBitmap? _videoBitmap;
     private bool _updatePending;
+    private RtspVideoPlayer? _player;
+    private string? _cameraName;
 
     public WriteableBitmap? VideoSource
     {
@@ -33,26 +48,86 @@ public partial class MainViewModel : ObservableObject, IDisposable
         private set => SetProperty(ref field, value);
     } = "Initializing...";
 
-    public MainViewModel(MainWindow mainWindow, IConfiguration configuration, DispatcherQueue dispatcherQueue)
+    public MainViewModel(
+        MainWindow mainWindow,
+        IUnifiProtectApiClient apiClient,
+        IProtectEventStream eventStream,
+        IDesktopNotifier notifier,
+        IConfiguration configuration,
+        EventNotificationSettings eventSettings,
+        DispatcherQueue dispatcherQueue)
     {
         _mainWindow = mainWindow;
+        _apiClient = apiClient;
+        _eventStream = eventStream;
+        _notifier = notifier;
+        _eventSettings = eventSettings;
         _dispatcherQueue = dispatcherQueue;
 
-        var rtspFeed = configuration["RtspFeed"] ?? throw new Exception("RtspFeed not configured");
         var snapshotPath = configuration["SnapshotPath"]
             ?? Path.Combine(AppContext.BaseDirectory, "snapshots", "snapshot.jpg");
-
-        _player = new RtspVideoPlayer(rtspFeed);
         _snapshotService = new SnapshotService(snapshotPath);
-        _player.FrameReady += OnFrameReady;
-        _player.StatusChanged += OnStatusChanged;
-        _player.Start();
+
+        _ = InitializeCameraAsync(_cts.Token);
+        _ = SubscribeToEventsAsync(_cts.Token);
     }
 
-    private void OnStatusChanged(object? sender, string message)
+    private async Task InitializeCameraAsync(CancellationToken ct)
     {
-        _dispatcherQueue.TryEnqueue(() => StatusMessage = message);
+        try
+        {
+            UpdateStatus("Discovering camera...");
+
+            var cameras = await _apiClient.GetCamerasAsync(ct);
+            var camera  = cameras.FirstOrDefault(c => c.IsConnected)
+                          ?? throw new InvalidOperationException("No connected camera found.");
+
+            _cameraName = camera.Name;
+            UpdateStatus($"Found camera: {camera.Name}");
+
+            var streams = await _apiClient.GetRtspsStreamsAsync(camera.Id, ct);
+            var stream  = streams.FirstOrDefault()
+                          ?? await _apiClient.CreateRtspsStreamAsync(camera.Id, ct);
+
+            var url = stream.Url
+                .Replace("rtsps://", "rtsp://")
+                .Replace("7441", "7447")
+                .Replace("?enableSrtp", "");
+
+            _player = new RtspVideoPlayer(url);
+            _player.FrameReady    += OnFrameReady;
+            _player.StatusChanged += OnStatusChanged;
+            _player.Start();
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[MainViewModel] Camera init failed: {ex.Message}");
+            UpdateStatus($"Error: {ex.Message}");
+        }
     }
+
+    private async Task SubscribeToEventsAsync(CancellationToken ct)
+    {
+        try
+        {
+            await foreach (var @event in _eventStream.SubscribeAsync(ct))
+            {
+                if (@event.UpdateType == ProtectEventUpdateType.Add && _eventSettings.IsEnabled(@event))
+                    _notifier.Notify(@event, _cameraName ?? "Unknown Camera");
+            }
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[MainViewModel] Event stream error: {ex.Message}");
+        }
+    }
+
+    private void OnStatusChanged(object? sender, string message) => UpdateStatus(message);
+
+    private void UpdateStatus(string message) =>
+        _dispatcherQueue.TryEnqueue(() => StatusMessage = message);
 
     private void OnFrameReady(object? sender, VideoFrame frame)
     {
@@ -101,9 +176,16 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     public void Dispose()
     {
-        _player.FrameReady -= OnFrameReady;
-        _player.StatusChanged -= OnStatusChanged;
-        _player.Dispose();
+        _cts.Cancel();
+        _cts.Dispose();
+
+        if (_player is not null)
+        {
+            _player.FrameReady    -= OnFrameReady;
+            _player.StatusChanged -= OnStatusChanged;
+            _player.Dispose();
+        }
+
         _snapshotService.Dispose();
     }
 }

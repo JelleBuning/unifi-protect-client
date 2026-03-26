@@ -1,9 +1,13 @@
 using H.NotifyIcon;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using Microsoft.UI;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Windowing;
 using System.Runtime.InteropServices;
+using UnifiProtectClient.Application.Options;
+using UnifiProtectClient.Application.Ports;
+using UnifiProtectClient.Services.Interfaces;
 using UnifiProtectClient.ViewModels;
 using Windows.Graphics;
 using Microsoft.UI.Xaml;
@@ -18,12 +22,24 @@ public sealed partial class MainWindow
 
     public MainViewModel ViewModel { get; }
 
-    public MainWindow(IConfiguration configuration)
+    public MainWindow(
+        IUnifiProtectApiClient apiClient,
+        IProtectEventStream eventStream,
+        IDesktopNotifier notifier,
+        IConfiguration configuration,
+        IOptions<EventNotificationSettings> eventSettings)
     {
         InitializeComponent();
         ResizeAndPosition();
 
-        ViewModel = new MainViewModel(this, configuration, DispatcherQueue.GetForCurrentThread());
+        ViewModel = new MainViewModel(
+            this,
+            apiClient,
+            eventStream,
+            notifier,
+            configuration,
+            eventSettings.Value,
+            DispatcherQueue.GetForCurrentThread());
         RootGrid.DataContext = ViewModel;
 
         Closed += OnWindowClosed;

@@ -1,12 +1,13 @@
 using CommunityToolkit.Mvvm.DependencyInjection;
 using H.NotifyIcon;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Windows.AppNotifications;
 using System;
+using UnifiProtectClient.Application.Options;
+using UnifiProtectClient.Application.Ports;
+using UnifiProtectClient.Infrastructure.Http;
+using UnifiProtectClient.Infrastructure.WebSocket;
 using UnifiProtectClient.Services;
 using UnifiProtectClient.Services.Interfaces;
 using UnifiProtectClient.Views;
@@ -21,39 +22,27 @@ public partial class App
     {
         try
         {
-            var host = Host.CreateDefaultBuilder()
-                .ConfigureAppConfiguration(config =>
-                {
-                    config.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
-                    _ = config.Build();
-                })
-                .ConfigureWebHostDefaults(webBuilder =>
-                {
-                    webBuilder.UseUrls("http://0.0.0.0:5000");
-                    webBuilder.ConfigureServices(services => { services.AddControllers(); });
-
-                    webBuilder.Configure(app =>
-                    {
-                        app.UseRouting();
-                        app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
-                    });
-                })
-                .ConfigureServices((_, services) =>
-                {
-                    services.AddSingleton<MainWindow>();
-                    services.AddTransient<IDesktopNotifier, DesktopNotifier>();
-                })
+            var config = new ConfigurationBuilder()
+                .SetBasePath(AppContext.BaseDirectory)
+                .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
                 .Build();
 
-            Ioc.Default.ConfigureServices(host.Services);
-            
-            _mainWindow = host.Services.GetRequiredService<MainWindow>();
+            var services = new ServiceCollection();
+            services.AddSingleton<IConfiguration>(config);
+            services.Configure<UnifiProtectOptions>(config.GetSection(UnifiProtectOptions.SectionName));
+            services.Configure<EventNotificationSettings>(config.GetSection(EventNotificationSettings.SectionName));
+            services.AddSingleton<IUnifiProtectApiClient, UnifiProtectApiClient>();
+            services.AddSingleton<IProtectEventStream, ProtectEventStream>();
+            services.AddTransient<IDesktopNotifier, DesktopNotifier>();
+            services.AddSingleton<MainWindow>();
+
+            var provider = services.BuildServiceProvider();
+            Ioc.Default.ConfigureServices(provider);
+
+            _mainWindow = provider.GetRequiredService<MainWindow>();
             _mainWindow.ShowInTaskbar();
 
             AppNotificationManager.Default.NotificationInvoked += (_, _) => _mainWindow.ShowFromBackground();
-
-            host.Start();
-
         }
         catch (Exception ex)
         {

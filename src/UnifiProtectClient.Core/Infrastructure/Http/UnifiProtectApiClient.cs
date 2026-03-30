@@ -26,8 +26,6 @@ public sealed class UnifiProtectApiClient : IUnifiProtectApiClient
     public UnifiProtectApiClient(IOptions<UnifiProtectOptions> options)
     {
         var opts = options.Value;
-
-        // Self-signed certificate is expected on a local UniFi NVR; safe for LAN use.
         var handler = new HttpClientHandler
         {
             ServerCertificateCustomValidationCallback = (_, _, _, _) => true
@@ -41,6 +39,8 @@ public sealed class UnifiProtectApiClient : IUnifiProtectApiClient
         _http.DefaultRequestHeaders.Add("Accept", "application/json");
         _http.DefaultRequestHeaders.Add("X-API-KEY", opts.ApiKey);
     }
+
+    internal UnifiProtectApiClient(HttpClient httpClient) => _http = httpClient;
 
     public async Task<IReadOnlyList<Camera>> GetCamerasAsync(CancellationToken ct = default)
     {

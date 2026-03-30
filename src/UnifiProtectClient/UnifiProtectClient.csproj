@@ -28,13 +28,15 @@
 	<ItemGroup>
 		<PackageReference Include="CommunityToolkit.Mvvm" />
 		<PackageReference Include="LibVLCSharp" />
-		<PackageReference Include="Microsoft.Extensions.Configuration.Json" />
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection" />
-		<PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
+		<PackageReference Include="Microsoft.Extensions.Hosting" />
 		<PackageReference Include="VideoLAN.LibVLC.Windows" />
 		<PackageReference Include="H.NotifyIcon.WinUI" />
 		<PackageReference Include="Microsoft.Windows.SDK.BuildTools" />
 		<PackageReference Include="Microsoft.WindowsAppSDK" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\UnifiProtectClient.Core\UnifiProtectClient.Core.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -43,6 +45,9 @@
 
 	<ItemGroup>
 		<Content Include="appsettings.json">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<Content Include="appsettings.*.json" Exclude="appsettings.example.json">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</Content>
 	</ItemGroup>

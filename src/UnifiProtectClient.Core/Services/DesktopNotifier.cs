@@ -4,24 +4,33 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Windows.AppNotifications;
-using Microsoft.Windows.AppNotifications.Builder;
 using UnifiProtectClient.Domain.Events;
 using UnifiProtectClient.Services.Interfaces;
 
 namespace UnifiProtectClient.Services;
 
-public class DesktopNotifier(IConfiguration configuration) : IDesktopNotifier
+public class DesktopNotifier : IDesktopNotifier
 {
-    private readonly string _snapshotPath = configuration["SnapshotPath"]
-        ?? Path.Combine(AppContext.BaseDirectory, "snapshots", "snapshot.jpg");
+    private readonly string _snapshotPath;
+    private readonly IAppNotificationSender _sender;
+
+    public DesktopNotifier(IConfiguration configuration)
+        : this(configuration, new AppNotificationSender()) { }
+
+    internal DesktopNotifier(IConfiguration configuration, IAppNotificationSender sender)
+    {
+        _snapshotPath = configuration["SnapshotPath"]
+            ?? Path.Combine(AppContext.BaseDirectory, "snapshots", "snapshot.jpg");
+        _sender = sender;
+    }
 
     public void Notify(ProtectEvent protectEvent, string cameraName)
     {
         try
         {
-            var notification = BuildAppNotification(protectEvent, cameraName);
-            AppNotificationManager.Default.Show(notification);
+            var title = BuildTitle(protectEvent, cameraName);
+            var heroPath = SnapshotService.GetHeroPath(_snapshotPath);
+            _sender.Notify(title, File.Exists(heroPath) ? heroPath : null);
         }
         catch (Exception ex)
         {
@@ -29,19 +38,7 @@ public class DesktopNotifier(IConfiguration configuration) : IDesktopNotifier
         }
     }
 
-    private AppNotification BuildAppNotification(ProtectEvent protectEvent, string cameraName)
-    {
-        var title = BuildTitle(protectEvent, cameraName);
-        var builder = new AppNotificationBuilder().AddText(title);
-
-        var heroPath = SnapshotService.GetHeroPath(_snapshotPath);
-        if (File.Exists(heroPath))
-            builder.SetHeroImage(new Uri(heroPath));
-
-        return builder.BuildNotification();
-    }
-
-    private static string BuildTitle(ProtectEvent protectEvent, string cameraName) => protectEvent switch
+    internal static string BuildTitle(ProtectEvent protectEvent, string cameraName) => protectEvent switch
     {
         // Camera
         MotionEvent => $"Motion detected ({cameraName})",
@@ -76,9 +73,9 @@ public class DesktopNotifier(IConfiguration configuration) : IDesktopNotifier
         _ => $"Event: {protectEvent.Type} ({cameraName})"
     };
 
-    private static string FormatSmartTypes(IReadOnlyList<string> types) =>
+    internal static string FormatSmartTypes(IReadOnlyList<string> types) =>
         string.Join(", ", types.Where(t => t.Length > 0).Select(t => char.ToUpper(t[0]) + t[1..]));
 
-    private static string Capitalize(string? input) =>
+    internal static string Capitalize(string? input) =>
         string.IsNullOrEmpty(input) ? "" : char.ToUpper(input[0]) + input[1..];
 }

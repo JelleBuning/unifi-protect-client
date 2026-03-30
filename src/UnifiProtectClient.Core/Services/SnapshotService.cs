@@ -45,7 +45,7 @@ public sealed class SnapshotService : IDisposable
         });
     }
 
-    private async Task SaveAsync(int width, int height, byte[] pixels)
+    internal async Task SaveAsync(int width, int height, byte[] pixels)
     {
         await SaveJpegAsync(_snapshotPath, width, height, pixels);
 
@@ -75,7 +75,7 @@ public sealed class SnapshotService : IDisposable
     /// Center-crops pixels to a 16:9 landscape rectangle.
     /// If the image is already landscape, returns it unchanged.
     /// </summary>
-    private static (byte[] pixels, int width, int height) CropToLandscape(byte[] pixels, int width, int height)
+    internal static (byte[] pixels, int width, int height) CropToLandscape(byte[] pixels, int width, int height)
     {
         const double targetAspect = 16.0 / 9.0;
         var currentAspect = (double)width / height;

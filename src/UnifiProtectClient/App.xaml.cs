@@ -1,7 +1,7 @@
 using CommunityToolkit.Mvvm.DependencyInjection;
 using H.NotifyIcon;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Windows.AppNotifications;
 using System;
 using UnifiProtectClient.Application.Options;
@@ -22,24 +22,24 @@ public partial class App
     {
         try
         {
-            var config = new ConfigurationBuilder()
-                .SetBasePath(AppContext.BaseDirectory)
-                .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
-                .Build();
+            var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings
+            {
+                ContentRootPath = AppContext.BaseDirectory
+            });
 
-            var services = new ServiceCollection();
-            services.AddSingleton<IConfiguration>(config);
-            services.Configure<UnifiProtectOptions>(config.GetSection(UnifiProtectOptions.SectionName));
-            services.Configure<EventNotificationSettings>(config.GetSection(EventNotificationSettings.SectionName));
-            services.AddSingleton<IUnifiProtectApiClient, UnifiProtectApiClient>();
-            services.AddSingleton<IProtectEventStream, ProtectEventStream>();
-            services.AddTransient<IDesktopNotifier, DesktopNotifier>();
-            services.AddSingleton<MainWindow>();
+            builder.Services.Configure<UnifiProtectOptions>(builder.Configuration.GetSection(UnifiProtectOptions.SectionName));
+            builder.Services.Configure<EventNotificationSettings>(builder.Configuration.GetSection(EventNotificationSettings.SectionName));
+            
+            builder.Services.AddSingleton<IUnifiProtectApiClient, UnifiProtectApiClient>();
+            builder.Services.AddSingleton<IProtectEventStream, ProtectEventStream>();
+            builder.Services.AddTransient<IDesktopNotifier, DesktopNotifier>();
 
-            var provider = services.BuildServiceProvider();
-            Ioc.Default.ConfigureServices(provider);
+            builder.Services.AddSingleton<MainWindow>();
 
-            _mainWindow = provider.GetRequiredService<MainWindow>();
+            var host = builder.Build();
+            Ioc.Default.ConfigureServices(host.Services);
+
+            _mainWindow = host.Services.GetRequiredService<MainWindow>();
             _mainWindow.ShowInTaskbar();
 
             AppNotificationManager.Default.NotificationInvoked += (_, _) => _mainWindow.ShowFromBackground();

@@ -15,9 +15,19 @@ using UnifiProtectClient.Domain.Events;
 
 namespace UnifiProtectClient.Infrastructure.WebSocket;
 
-public sealed class ProtectEventStream(IOptions<UnifiProtectOptions> options) : IProtectEventStream
+public sealed class ProtectEventStream : IProtectEventStream
 {
-    private readonly UnifiProtectOptions _options = options.Value;
+    private readonly UnifiProtectOptions _options;
+    private readonly IWebSocketFactory _wsFactory;
+
+    public ProtectEventStream(IOptions<UnifiProtectOptions> options)
+        : this(options, new ClientWebSocketFactory()) { }
+
+    internal ProtectEventStream(IOptions<UnifiProtectOptions> options, IWebSocketFactory wsFactory)
+    {
+        _options = options.Value;
+        _wsFactory = wsFactory;
+    }
 
     public async IAsyncEnumerable<ProtectEvent> SubscribeAsync(
         [EnumeratorCancellation] CancellationToken ct = default)
@@ -29,9 +39,7 @@ public sealed class ProtectEventStream(IOptions<UnifiProtectOptions> options) : 
 
         while (!ct.IsCancellationRequested)
         {
-            using var ws = new ClientWebSocket();
-            ws.Options.SetRequestHeader("X-API-KEY", _options.ApiKey);
-            ws.Options.RemoteCertificateValidationCallback = (_, _, _, _) => true;
+            using var ws = _wsFactory.Create(_options.ApiKey);
 
             bool connected = false;
             bool cancelled = false;
@@ -74,7 +82,7 @@ public sealed class ProtectEventStream(IOptions<UnifiProtectOptions> options) : 
         }
     }
 
-    private Uri BuildWebSocketUri()
+    internal Uri BuildWebSocketUri()
     {
         // Preserve the full path from BaseUrl (e.g. /proxy/protect/api)
         // so the WebSocket URL is wss://host/proxy/protect/api/v1/subscribe/events.
@@ -87,7 +95,7 @@ public sealed class ProtectEventStream(IOptions<UnifiProtectOptions> options) : 
     }
 
     private static async IAsyncEnumerable<ProtectEvent> ReceiveAsync(
-        ClientWebSocket ws,
+        IWebSocketConnection ws,
         [EnumeratorCancellation] CancellationToken ct)
     {
         var buffer = new byte[64 * 1024];
@@ -113,7 +121,7 @@ public sealed class ProtectEventStream(IOptions<UnifiProtectOptions> options) : 
         }
     }
 
-    private static ProtectEvent? ParseEvent(string json)
+    internal static ProtectEvent? ParseEvent(string json)
     {
         try
         {

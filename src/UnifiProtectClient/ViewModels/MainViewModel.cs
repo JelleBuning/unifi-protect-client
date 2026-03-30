@@ -116,7 +116,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         {
             await foreach (var @event in _eventStream.SubscribeAsync(ct))
             {
-                if (@event.UpdateType == ProtectEventUpdateType.Add && _eventSettings.IsEnabled(@event))
+                if (_eventSettings.IsEnabled(@event) && IsNotifiableEvent(@event))
                     _notifier.Notify(@event, _cameraName ?? "Unknown Camera");
             }
         }
@@ -126,6 +126,13 @@ public partial class MainViewModel : ObservableObject, IDisposable
             Debug.WriteLine($"[MainViewModel] Event stream error: {ex.Message}");
         }
     }
+
+    // Notify on Add events for all types, and also on Update events for ring events
+    // that have no End timestamp yet (ring is starting, not ending). The integration
+    // API at /proxy/protect/integration emits ring events as Update, not Add.
+    private static bool IsNotifiableEvent(ProtectEvent @event) =>
+        @event.UpdateType == ProtectEventUpdateType.Add ||
+        @event is RingEvent { End: null };
 
     private void OnStatusChanged(object? sender, string message) => UpdateStatus(message);
 

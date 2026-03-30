@@ -1,12 +1,15 @@
 using CommunityToolkit.Mvvm.DependencyInjection;
 using H.NotifyIcon;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.UI.Xaml;
+using Microsoft.Windows.AppLifecycle;
 using Microsoft.Windows.AppNotifications;
 using System;
+using UnifiProtectClient.Application.Options;
+using UnifiProtectClient.Application.Ports;
+using UnifiProtectClient.Infrastructure.Http;
+using UnifiProtectClient.Infrastructure.WebSocket;
 using UnifiProtectClient.Services;
 using UnifiProtectClient.Services.Interfaces;
 using UnifiProtectClient.Views;
@@ -15,45 +18,45 @@ namespace UnifiProtectClient;
 
 public partial class App
 {
-    private readonly MainWindow _mainWindow = null!;
+    private MainWindow? _mainWindow;
 
-    public App()
+    protected override async void OnLaunched(LaunchActivatedEventArgs _)
     {
+        var activationArgs = AppInstance.GetCurrent().GetActivatedEventArgs();
+        var keyInstance = AppInstance.FindOrRegisterForKey("UnifiProtectClient");
+
+        if (!keyInstance.IsCurrent)
+        {
+            await keyInstance.RedirectActivationToAsync(activationArgs);
+            Exit();
+            return;
+        }
+
+        keyInstance.Activated += OnActivated;
+
         try
         {
-            var host = Host.CreateDefaultBuilder()
-                .ConfigureAppConfiguration(config =>
-                {
-                    config.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
-                    _ = config.Build();
-                })
-                .ConfigureWebHostDefaults(webBuilder =>
-                {
-                    webBuilder.UseUrls("http://0.0.0.0:5000");
-                    webBuilder.ConfigureServices(services => { services.AddControllers(); });
+            var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings
+            {
+                ContentRootPath = AppContext.BaseDirectory
+            });
 
-                    webBuilder.Configure(app =>
-                    {
-                        app.UseRouting();
-                        app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
-                    });
-                })
-                .ConfigureServices((_, services) =>
-                {
-                    services.AddSingleton<MainWindow>();
-                    services.AddTransient<IDesktopNotifier, DesktopNotifier>();
-                })
-                .Build();
+            builder.Services.Configure<UnifiProtectOptions>(builder.Configuration.GetSection(UnifiProtectOptions.SectionName));
+            builder.Services.Configure<EventNotificationSettings>(builder.Configuration.GetSection(EventNotificationSettings.SectionName));
 
+            builder.Services.AddSingleton<IUnifiProtectApiClient, UnifiProtectApiClient>();
+            builder.Services.AddSingleton<IProtectEventStream, ProtectEventStream>();
+            builder.Services.AddTransient<IDesktopNotifier, DesktopNotifier>();
+
+            builder.Services.AddSingleton<MainWindow>();
+
+            var host = builder.Build();
             Ioc.Default.ConfigureServices(host.Services);
-            
+
             _mainWindow = host.Services.GetRequiredService<MainWindow>();
             _mainWindow.ShowInTaskbar();
 
             AppNotificationManager.Default.NotificationInvoked += (_, _) => _mainWindow.ShowFromBackground();
-
-            host.Start();
-
         }
         catch (Exception ex)
         {
@@ -62,5 +65,9 @@ public partial class App
         }
     }
 
-    public void OnToastClicked() => _mainWindow.Show();
+    private void OnActivated(object? sender, AppActivationArguments args)
+    {
+        if (args.Kind == ExtendedActivationKind.ToastNotification)
+            _mainWindow?.DispatcherQueue.TryEnqueue(_mainWindow.BringToFront);
+    }
 }

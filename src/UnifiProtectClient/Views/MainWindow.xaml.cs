@@ -1,11 +1,16 @@
 using H.NotifyIcon;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using Microsoft.UI;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Windowing;
+using System.Runtime.InteropServices;
+using UnifiProtectClient.Application.Options;
+using UnifiProtectClient.Application.Ports;
+using UnifiProtectClient.Services.Interfaces;
 using UnifiProtectClient.ViewModels;
 using Windows.Graphics;
 using Microsoft.UI.Xaml;
+using WinRT.Interop;
 
 namespace UnifiProtectClient.Views;
 
@@ -16,18 +21,45 @@ public sealed partial class MainWindow
 
     public MainViewModel ViewModel { get; }
 
-    public MainWindow(IConfiguration configuration)
+    public MainWindow(
+        IUnifiProtectApiClient apiClient,
+        IProtectEventStream eventStream,
+        IDesktopNotifier notifier,
+        IOptions<UnifiProtectOptions> options,
+        IOptions<EventNotificationSettings> eventSettings)
     {
         InitializeComponent();
         ResizeAndPosition();
 
-        ViewModel = new MainViewModel(this, configuration, DispatcherQueue.GetForCurrentThread());
+        ViewModel = new MainViewModel(
+            this,
+            apiClient,
+            eventStream,
+            notifier,
+            options,
+            eventSettings.Value,
+            DispatcherQueue.GetForCurrentThread());
         RootGrid.DataContext = ViewModel;
 
         Closed += OnWindowClosed;
     }
 
-    public void ShowFromBackground() => DispatcherQueue.TryEnqueue(() => this.Show());
+    public void BringToFront()
+    {
+        var hwnd = WindowNative.GetWindowHandle(this);
+        ShowWindow(hwnd, SW_RESTORE);
+        SetForegroundWindow(hwnd);
+    }
+
+    public void ShowFromBackground() => DispatcherQueue.TryEnqueue(BringToFront);
+
+    [DllImport("user32.dll")]
+    private static extern bool ShowWindow(nint hWnd, int nCmdShow);
+
+    [DllImport("user32.dll")]
+    private static extern bool SetForegroundWindow(nint hWnd);
+
+    private const int SW_RESTORE = 9;
 
     private void OnWindowClosed(object sender, WindowEventArgs args)
     {

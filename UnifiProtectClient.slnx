@@ -5,12 +5,15 @@
     <Platform Name="x86" />
   </Configurations>
   <Folder Name="/src/">
-    <File Path="src/Directory.Packages.props" />
+    <Project Path="src/UnifiProtectClient.Core/UnifiProtectClient.Core.csproj" />
     <Project Path="src/UnifiProtectClient/UnifiProtectClient.csproj">
       <Platform Solution="*|ARM64" Project="ARM64" />
       <Platform Solution="*|x64" Project="x64" />
       <Platform Solution="*|x86" Project="x86" />
       <Deploy />
     </Project>
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/UnifiProtectClient.Core.Tests/UnifiProtectClient.Core.Tests.csproj" />
   </Folder>
 </Solution>

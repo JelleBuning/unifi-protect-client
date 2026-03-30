@@ -60,3 +60,17 @@ nunit-*.xml
 
 *.idea
 .vs/
+
+# Local build output
+build_out/
+build_outApp*
+build_outViews*/
+
+# User-specific files
+*.user
+*.suo
+*.userprefs
+*.usertask
+.DS_Store
+Thumbs.db
+**/appsettings.development.json

@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<OutputType>WinExe</OutputType>
 		<TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
@@ -10,13 +10,8 @@
 		<UseWinUI>true</UseWinUI>
 		<EnableMsixTooling>true</EnableMsixTooling>
 		<Nullable>enable</Nullable>
-		<DefineConstants>$(DefineConstants);DISABLE_XAML_GENERATED_MAIN</DefineConstants>
 	</PropertyGroup>
-	<ItemGroup>
-		<Content Remove="Assets\TempDoorbell.png" />
-		<Content Remove="Assets\tray-icon.ico" />
-	</ItemGroup>
-
+	
 	<ItemGroup>
 		<Content Include="Assets\*" />
 	</ItemGroup>
@@ -30,14 +25,17 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<FrameworkReference Include="Microsoft.AspNetCore.App" />
 		<PackageReference Include="CommunityToolkit.Mvvm" />
 		<PackageReference Include="LibVLCSharp" />
+		<PackageReference Include="Microsoft.Extensions.Hosting" />
 		<PackageReference Include="VideoLAN.LibVLC.Windows" />
 		<PackageReference Include="H.NotifyIcon.WinUI" />
 		<PackageReference Include="Microsoft.Windows.SDK.BuildTools" />
 		<PackageReference Include="Microsoft.WindowsAppSDK" />
-		<PackageReference Include="UniFiApiProtectWebhookDotnet" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\UnifiProtectClient.Core\UnifiProtectClient.Core.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -46,6 +44,9 @@
 
 	<ItemGroup>
 		<Content Include="appsettings.json">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<Content Include="appsettings.*.json" Exclude="appsettings.example.json">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</Content>
 	</ItemGroup>

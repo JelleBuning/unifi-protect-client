@@ -1,0 +1,27 @@
+name: .NET Build and Test
+
+on:
+  workflow_call:
+    inputs:
+      os:
+        type: string
+        default: windows-latest
+
+jobs:
+  build-test:
+    runs-on: ${{ inputs.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup .NET environment
+        uses: ./.github/actions/setup-dotnet-env
+
+      - name: Install dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
+
+      - name: Test
+        run: dotnet test --no-build --configuration Release --logger GitHubActions

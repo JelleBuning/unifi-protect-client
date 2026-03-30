@@ -1,5 +1,4 @@
 using H.NotifyIcon;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using Microsoft.UI;
 using Microsoft.UI.Dispatching;
@@ -26,7 +25,7 @@ public sealed partial class MainWindow
         IUnifiProtectApiClient apiClient,
         IProtectEventStream eventStream,
         IDesktopNotifier notifier,
-        IConfiguration configuration,
+        IOptions<UnifiProtectOptions> options,
         IOptions<EventNotificationSettings> eventSettings)
     {
         InitializeComponent();
@@ -37,7 +36,7 @@ public sealed partial class MainWindow
             apiClient,
             eventStream,
             notifier,
-            configuration,
+            options,
             eventSettings.Value,
             DispatcherQueue.GetForCurrentThread());
         RootGrid.DataContext = ViewModel;

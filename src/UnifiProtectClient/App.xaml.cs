@@ -2,6 +2,8 @@ using CommunityToolkit.Mvvm.DependencyInjection;
 using H.NotifyIcon;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.UI.Xaml;
+using Microsoft.Windows.AppLifecycle;
 using Microsoft.Windows.AppNotifications;
 using System;
 using UnifiProtectClient.Application.Options;
@@ -16,10 +18,22 @@ namespace UnifiProtectClient;
 
 public partial class App
 {
-    private readonly MainWindow _mainWindow;
+    private MainWindow? _mainWindow;
 
-    public App()
+    protected override async void OnLaunched(LaunchActivatedEventArgs _)
     {
+        var activationArgs = AppInstance.GetCurrent().GetActivatedEventArgs();
+        var keyInstance = AppInstance.FindOrRegisterForKey("UnifiProtectClient");
+
+        if (!keyInstance.IsCurrent)
+        {
+            await keyInstance.RedirectActivationToAsync(activationArgs);
+            Exit();
+            return;
+        }
+
+        keyInstance.Activated += OnActivated;
+
         try
         {
             var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings
@@ -29,7 +43,7 @@ public partial class App
 
             builder.Services.Configure<UnifiProtectOptions>(builder.Configuration.GetSection(UnifiProtectOptions.SectionName));
             builder.Services.Configure<EventNotificationSettings>(builder.Configuration.GetSection(EventNotificationSettings.SectionName));
-            
+
             builder.Services.AddSingleton<IUnifiProtectApiClient, UnifiProtectApiClient>();
             builder.Services.AddSingleton<IProtectEventStream, ProtectEventStream>();
             builder.Services.AddTransient<IDesktopNotifier, DesktopNotifier>();
@@ -51,5 +65,9 @@ public partial class App
         }
     }
 
-    public void OnToastClicked() => _mainWindow.BringToFront();
+    private void OnActivated(object? sender, AppActivationArguments args)
+    {
+        if (args.Kind == ExtendedActivationKind.ToastNotification)
+            _mainWindow?.DispatcherQueue.TryEnqueue(_mainWindow.BringToFront);
+    }
 }

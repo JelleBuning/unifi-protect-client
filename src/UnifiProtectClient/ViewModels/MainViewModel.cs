@@ -1,6 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
@@ -52,7 +52,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         IUnifiProtectApiClient apiClient,
         IProtectEventStream eventStream,
         IDesktopNotifier notifier,
-        IConfiguration configuration,
+        IOptions<UnifiProtectOptions> options,
         EventNotificationSettings eventSettings,
         DispatcherQueue dispatcherQueue)
     {
@@ -63,7 +63,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         _eventSettings = eventSettings;
         _dispatcherQueue = dispatcherQueue;
 
-        var snapshotPath = configuration["SnapshotPath"]
+        var snapshotPath = options.Value.SnapshotPath
             ?? Path.Combine(AppContext.BaseDirectory, "snapshots", "snapshot.jpg");
         _snapshotService = new SnapshotService(snapshotPath);
 

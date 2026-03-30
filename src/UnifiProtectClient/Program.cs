@@ -1,7 +1,6 @@
 using System;
 using System.Threading;
 using Microsoft.UI.Dispatching;
-using Microsoft.UI.Xaml;
 using Microsoft.Windows.AppLifecycle;
 
 namespace UnifiProtectClient;

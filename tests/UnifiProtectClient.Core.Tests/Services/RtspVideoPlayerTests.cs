@@ -52,8 +52,8 @@ public sealed class VideoFrameTests
 {
     private static VideoFrame MakeFrame(int w = 4, int h = 4)
     {
-        int dataLength = w * h * 4;
-        byte[] pixels = ArrayPool<byte>.Shared.Rent(dataLength);
+        var dataLength = w * h * 4;
+        var pixels = ArrayPool<byte>.Shared.Rent(dataLength);
         return new VideoFrame(pixels, w, h, dataLength);
     }
 
@@ -124,7 +124,7 @@ public sealed class RtspVideoPlayerTests
     {
         var firstHandle = new TestVlcHandle();
         var secondHandle = new TestVlcHandle();
-        int callCount = 0;
+        var callCount = 0;
         var factoryMock = new Mock<IVlcPlayerFactory>();
         factoryMock.Setup(f => f.Create(It.IsAny<string>(), It.IsAny<Action<string>>()))
                    .Returns<string, Action<string>>((_, __) => callCount++ == 0 ? firstHandle : secondHandle);
@@ -185,8 +185,8 @@ public sealed class RtspVideoPlayerTests
         VideoFrame? received = null;
         player.FrameReady += (_, f) => received = f;
 
-        int dataLength = 4 * 4 * 4;
-        byte[] pixels = ArrayPool<byte>.Shared.Rent(dataLength);
+        var dataLength = 4 * 4 * 4;
+        var pixels = ArrayPool<byte>.Shared.Rent(dataLength);
         using var frame = new VideoFrame(pixels, 4, 4, dataLength);
 
         handle.RaiseFrameReady(frame);

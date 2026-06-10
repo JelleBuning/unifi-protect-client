@@ -9,14 +9,14 @@
 
   <Identity
     Name="534f199d-b244-4878-a37c-647798ee90df"
-    Publisher="CN=JelleBuning"
+    Publisher="CN=BuningSoftware"
     Version="1.0.0.0" />
 
   <mp:PhoneIdentity PhoneProductId="534f199d-b244-4878-a37c-647798ee90df" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
   <Properties>
     <DisplayName>Unifi Protect Client</DisplayName>
-    <PublisherDisplayName>JelleBuning</PublisherDisplayName>
+    <PublisherDisplayName>Buning Software</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
 

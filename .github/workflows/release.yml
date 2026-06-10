@@ -40,13 +40,13 @@ jobs:
       - name: Build MSIX bundle
         shell: pwsh
         run: |
-          msbuild src\UnifiProtectClient\UnifiProtectClient.csproj `
-            /p:Configuration=Release `
-            /p:AppxBundle=Always `
-            /p:AppxBundlePlatforms="x86|x64|ARM64" `
-            /p:AppxPackageDir="${{ github.workspace }}\AppxPackages\" `
-            /p:AppxPackageSigningEnabled=false `
-            /p:UapAppxPackageBuildMode=SideloadOnly
+          dotnet build src\UnifiProtectClient\UnifiProtectClient.csproj `
+            -c Release `
+            --no-restore `
+            -p:AppxBundle=Always `
+            -p:AppxBundlePlatforms="x86|x64|ARM64" `
+            -p:AppxPackageDir="${{ github.workspace }}\AppxPackages\" `
+            -p:AppxPackageSigningEnabled=false
 
       - name: Decode certificate
         shell: pwsh
@@ -55,6 +55,7 @@ jobs:
           [IO.File]::WriteAllBytes("${{ github.workspace }}\cert.pfx", $bytes)
 
       - name: Sign MSIX bundle
+        id: sign
         shell: pwsh
         run: |
           $bundle = Get-ChildItem -Path "${{ github.workspace }}\AppxPackages" -Filter "*.msixbundle" -Recurse |

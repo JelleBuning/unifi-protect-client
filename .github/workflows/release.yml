@@ -7,6 +7,9 @@ on:
 jobs:
   build-and-release:
     runs-on: windows-latest
+    strategy:
+      matrix:
+        platform: [x86, x64, ARM64]
 
     steps:
       - name: Checkout
@@ -34,15 +37,13 @@ jobs:
       - name: Install dependencies
         run: dotnet restore
 
-      - name: Build MSIX bundle
+      - name: Build MSIX
         shell: pwsh
         run: |
           dotnet build src\UnifiProtectClient\UnifiProtectClient.csproj `
             -c Release `
             --no-restore `
-            -p:Platform=x64 `
-            -p:AppxBundle=Always `
-            -p:AppxBundlePlatforms="x86|x64|ARM64" `
+            -p:Platform=${{ matrix.platform }} `
             -p:AppxPackageDir="${{ github.workspace }}\AppxPackages\" `
             -p:AppxPackageSigningEnabled=false
 
@@ -52,13 +53,12 @@ jobs:
           $bytes = [Convert]::FromBase64String("${{ secrets.CERTIFICATE_BASE64 }}")
           [IO.File]::WriteAllBytes("${{ github.workspace }}\cert.pfx", $bytes)
 
-      - name: Sign MSIX bundle
-        id: sign
+      - name: Sign MSIX
         shell: pwsh
         run: |
-          $bundle = Get-ChildItem -Path "${{ github.workspace }}\AppxPackages" -Filter "*.msixbundle" -Recurse |
+          $package = Get-ChildItem -Path "${{ github.workspace }}\AppxPackages" -Filter "*.msix" -Recurse |
             Select-Object -First 1
-          if (-not $bundle) { throw "No .msixbundle found in AppxPackages." }
+          if (-not $package) { throw "No .msix found in AppxPackages." }
 
           $signtool = Get-ChildItem -Path "C:\Program Files (x86)\Windows Kits\10\bin" -Filter "signtool.exe" -Recurse |
             Where-Object { $_.FullName -match "x64" } |
@@ -67,11 +67,10 @@ jobs:
           if (-not $signtool) { throw "signtool.exe not found." }
 
           & $signtool.FullName sign /fd SHA256 /f "${{ github.workspace }}\cert.pfx" `
-            /p "${{ secrets.CERTIFICATE_PASSWORD }}" $bundle.FullName
+            /p "${{ secrets.CERTIFICATE_PASSWORD }}" $package.FullName
 
-          "BUNDLE_PATH=$($bundle.FullName)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
-
-      - name: Upload bundle to GitHub Release
+      - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: AppxPackages/**/*.msixbundle
+          files: AppxPackages/**/*.msix
+

@@ -28,9 +28,6 @@ jobs:
           (Get-Content $manifest -Raw) -replace 'Version="\d+\.\d+\.\d+\.\d+"', "Version=`"$version`"" |
             Set-Content $manifest -NoNewline
 
-      - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v2
-
       - name: Setup .NET environment
         uses: ./.github/actions/setup-dotnet-env
 
@@ -43,6 +40,7 @@ jobs:
           dotnet build src\UnifiProtectClient\UnifiProtectClient.csproj `
             -c Release `
             --no-restore `
+            -p:Platform=x64 `
             -p:AppxBundle=Always `
             -p:AppxBundlePlatforms="x86|x64|ARM64" `
             -p:AppxPackageDir="${{ github.workspace }}\AppxPackages\" `

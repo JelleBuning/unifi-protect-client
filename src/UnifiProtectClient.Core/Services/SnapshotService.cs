@@ -84,9 +84,9 @@ public sealed class SnapshotService : IDisposable
             return (pixels, width, height); // already landscape enough
 
         // Portrait: keep full width, crop height to 16:9
-        int cropHeight = (int)(width / targetAspect);
-        int startY = (height - cropHeight) / 2;
-        int stride = width * 4;
+        var cropHeight = (int)(width / targetAspect);
+        var startY = (height - cropHeight) / 2;
+        var stride = width * 4;
 
         var result = new byte[stride * cropHeight];
         Buffer.BlockCopy(pixels, startY * stride, result, 0, result.Length);

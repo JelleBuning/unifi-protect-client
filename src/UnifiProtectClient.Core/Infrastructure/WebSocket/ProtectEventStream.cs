@@ -41,8 +41,8 @@ public sealed class ProtectEventStream : IProtectEventStream
         {
             using var ws = _wsFactory.Create(_options.ApiKey);
 
-            bool connected = false;
-            bool cancelled = false;
+            var connected = false;
+            var cancelled = false;
 
             try
             {
@@ -72,7 +72,7 @@ public sealed class ProtectEventStream : IProtectEventStream
 
             if (ct.IsCancellationRequested) yield break;
 
-            bool delayCancelled = false;
+            var delayCancelled = false;
             try { await Task.Delay(backoffMs, ct); }
             catch (OperationCanceledException) { delayCancelled = true; }
 

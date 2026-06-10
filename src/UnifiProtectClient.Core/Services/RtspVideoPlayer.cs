@@ -143,8 +143,8 @@ internal sealed class DefaultVlcPlayerFactory : IVlcPlayerFactory
     {
         // Point LibVLCSharp at the native DLLs deployed by VideoLAN.LibVLC.Windows
         // (layout: <AppDir>\libvlc\win-x64\libvlc.dll + plugins\)
-        string arch = Environment.Is64BitProcess ? "win-x64" : "win-x86";
-        string vlcDir = Path.Combine(AppContext.BaseDirectory, "libvlc", arch);
+        var arch = Environment.Is64BitProcess ? "win-x64" : "win-x86";
+        var vlcDir = Path.Combine(AppContext.BaseDirectory, "libvlc", arch);
         Core.Initialize(vlcDir);
     }
 
@@ -275,8 +275,8 @@ internal sealed class VlcPlayerHandle : IVlcPlayerHandle
 
         try
         {
-            int dataLength = _width * _height * 4;
-            byte[] pixels = ArrayPool<byte>.Shared.Rent(dataLength);
+            var dataLength = _width * _height * 4;
+            var pixels = ArrayPool<byte>.Shared.Rent(dataLength);
             Buffer.BlockCopy(_pixelBuffer, 0, pixels, 0, dataLength);
             FrameReady?.Invoke(this, new VideoFrame(pixels, _width, _height, dataLength));
         }

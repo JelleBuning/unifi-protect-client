@@ -90,12 +90,12 @@ public sealed class SnapshotServiceTests
     {
         // 9:16 portrait
         int w = 90, h = 160;
-        int stride = w * 4;
+        var stride = w * 4;
         var pixels = new byte[stride * h];
 
         // Fill rows with row index so we can verify center crop
-        for (int row = 0; row < h; row++)
-            for (int col = 0; col < stride; col++)
+        for (var row = 0; row < h; row++)
+            for (var col = 0; col < stride; col++)
                 pixels[row * stride + col] = (byte)(row % 256);
 
         var (result, rw, rh) = SnapshotService.CropToLandscape(pixels, w, h);
@@ -104,8 +104,8 @@ public sealed class SnapshotServiceTests
         Assert.IsTrue(rh < h, "Cropped height should be less than original");
 
         // The first row of result should come from somewhere in the middle
-        int cropHeight = (int)(w / (16.0 / 9.0));
-        int startY = (h - cropHeight) / 2;
+        var cropHeight = (int)(w / (16.0 / 9.0));
+        var startY = (h - cropHeight) / 2;
         Assert.AreEqual((byte)(startY % 256), result[0]);
     }
 

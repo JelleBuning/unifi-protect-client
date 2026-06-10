@@ -28,6 +28,9 @@ jobs:
           (Get-Content $manifest -Raw) -replace 'Version="\d+\.\d+\.\d+\.\d+"', "Version=`"$version`"" |
             Set-Content $manifest -NoNewline
 
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
       - name: Setup .NET environment
         uses: ./.github/actions/setup-dotnet-env
 
@@ -69,6 +72,7 @@ jobs:
             /p "${{ secrets.CERTIFICATE_PASSWORD }}" $bundle.FullName
 
           "BUNDLE_PATH=$($bundle.FullName)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+        id: sign
 
       - name: Upload bundle to GitHub Release
         uses: softprops/action-gh-release@v2

@@ -147,7 +147,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         }
 
         _updatePending = true;
-        bool queued = _dispatcherQueue.TryEnqueue(() =>
+        var queued = _dispatcherQueue.TryEnqueue(() =>
         {
             try
             {

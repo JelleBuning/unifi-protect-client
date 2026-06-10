@@ -453,7 +453,7 @@ public sealed class ProtectEventStreamParseTests
         const string json = """{"type":"add","item":{"id":"ev1","type":"ring","start":1000,"device":"dev1"}}""";
         var bytes = Encoding.UTF8.GetBytes(json);
 
-        int callCount = 0;
+        var callCount = 0;
         wsMock.SetupGet(w => w.State).Returns(() => callCount == 0 ? WebSocketState.Open : WebSocketState.Closed);
         wsMock.Setup(w => w.ReceiveAsync(It.IsAny<Memory<byte>>(), It.IsAny<CancellationToken>()))
               .Returns((Memory<byte> buffer, CancellationToken _) =>
@@ -491,7 +491,7 @@ public sealed class ProtectEventStreamParseTests
 
         wsMock.Setup(w => w.ConnectAsync(It.IsAny<Uri>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
 
-        int callCount = 0;
+        var callCount = 0;
         wsMock.SetupGet(w => w.State).Returns(WebSocketState.Open);
         wsMock.Setup(w => w.ReceiveAsync(It.IsAny<Memory<byte>>(), It.IsAny<CancellationToken>()))
               .Returns(() =>

@@ -1,0 +1,76 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract version from tag
+        id: version
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $version = $tag.TrimStart('v') + '.0'
+          "VERSION=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+      - name: Update Package.appxmanifest version
+        shell: pwsh
+        run: |
+          $manifest = "src\UnifiProtectClient\Package.appxmanifest"
+          $version = "${{ steps.version.outputs.VERSION }}"
+          (Get-Content $manifest -Raw) -replace 'Version="\d+\.\d+\.\d+\.\d+"', "Version=`"$version`"" |
+            Set-Content $manifest -NoNewline
+
+      - name: Setup .NET environment
+        uses: ./.github/actions/setup-dotnet-env
+
+      - name: Install dependencies
+        run: dotnet restore
+
+      - name: Build MSIX bundle
+        shell: pwsh
+        run: |
+          dotnet build src\UnifiProtectClient\UnifiProtectClient.csproj `
+            -c Release `
+            --no-restore `
+            -p:AppxBundle=Always `
+            -p:AppxBundlePlatforms="x86|x64|ARM64" `
+            -p:AppxPackageDir="${{ github.workspace }}\AppxPackages\" `
+            -p:AppxPackageSigningEnabled=false
+
+      - name: Decode certificate
+        shell: pwsh
+        run: |
+          $bytes = [Convert]::FromBase64String("${{ secrets.CERTIFICATE_BASE64 }}")
+          [IO.File]::WriteAllBytes("${{ github.workspace }}\cert.pfx", $bytes)
+
+      - name: Sign MSIX bundle
+        id: sign
+        shell: pwsh
+        run: |
+          $bundle = Get-ChildItem -Path "${{ github.workspace }}\AppxPackages" -Filter "*.msixbundle" -Recurse |
+            Select-Object -First 1
+          if (-not $bundle) { throw "No .msixbundle found in AppxPackages." }
+
+          $signtool = Get-ChildItem -Path "C:\Program Files (x86)\Windows Kits\10\bin" -Filter "signtool.exe" -Recurse |
+            Where-Object { $_.FullName -match "x64" } |
+            Sort-Object FullName -Descending |
+            Select-Object -First 1
+          if (-not $signtool) { throw "signtool.exe not found." }
+
+          & $signtool.FullName sign /fd SHA256 /f "${{ github.workspace }}\cert.pfx" `
+            /p "${{ secrets.CERTIFICATE_PASSWORD }}" $bundle.FullName
+
+          "BUNDLE_PATH=$($bundle.FullName)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+      - name: Upload bundle to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: AppxPackages/**/*.msixbundle

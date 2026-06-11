@@ -23,7 +23,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Extract version from tag
         id: version
@@ -92,6 +92,6 @@ jobs:
           "MSIX_PATH=$newName" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
 
       - name: Upload to GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: AppxPackages/**/*.msix

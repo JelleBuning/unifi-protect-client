@@ -1,11 +1,24 @@
-name: .NET Build
+name: .NET Build and Test
+
 on:
   push:
+  pull_request:
+
 jobs:
-  build:
-    strategy:
-      matrix:
-        os: [windows-latest]
-    uses: ./.github/workflows/dotnet-build-test.yml
-    with:
-      os: ${{ matrix.os }}
+  build-test:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup .NET environment
+        uses: ./.github/actions/setup-dotnet-env
+
+      - name: Install dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
+
+      - name: Test
+        run: dotnet test --no-build --configuration Release --logger GitHubActions

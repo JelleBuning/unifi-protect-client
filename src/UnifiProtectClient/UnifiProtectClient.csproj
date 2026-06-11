@@ -10,6 +10,8 @@
 		<UseWinUI>true</UseWinUI>
 		<EnableMsixTooling>true</EnableMsixTooling>
 		<Nullable>enable</Nullable>
+		<HasPackageAndPublishMenuSuites>true</HasPackageAndPublishMenuSuites>
+		<WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
 	</PropertyGroup>
 	
 	<ItemGroup>

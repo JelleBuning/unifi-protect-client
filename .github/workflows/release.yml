@@ -10,6 +10,13 @@ jobs:
     strategy:
       matrix:
         platform: [x86, x64, ARM64]
+        include:
+          - platform: x86
+            rid: win-x86
+          - platform: x64
+            rid: win-x64
+          - platform: ARM64
+            rid: win-arm64
 
     steps:
       - name: Checkout
@@ -34,18 +41,20 @@ jobs:
       - name: Setup .NET environment
         uses: ./.github/actions/setup-dotnet-env
 
-      - name: Install dependencies
+      - name: Restore dependencies
         run: dotnet restore
 
-      - name: Build MSIX
+      - name: Build and Package MSIX
         shell: pwsh
         run: |
-          dotnet build src\UnifiProtectClient\UnifiProtectClient.csproj `
+          dotnet publish src\UnifiProtectClient\UnifiProtectClient.csproj `
             -c Release `
-            --no-restore `
+            -r ${{ matrix.rid }} `
             -p:Platform=${{ matrix.platform }} `
+            -p:GenerateAppxPackageOnBuild=true `
             -p:AppxPackageDir="${{ github.workspace }}\AppxPackages\" `
-            -p:AppxPackageSigningEnabled=false
+            -p:AppxPackageSigningEnabled=false `
+            -p:AppxBundle=Never
 
       - name: Decode certificate
         shell: pwsh
@@ -69,8 +78,17 @@ jobs:
           & $signtool.FullName sign /fd SHA256 /f "${{ github.workspace }}\cert.pfx" `
             /p "${{ secrets.CERTIFICATE_PASSWORD }}" $package.FullName
 
+      - name: Rename MSIX with platform suffix
+        id: rename
+        shell: pwsh
+        run: |
+          $package = Get-ChildItem -Path "${{ github.workspace }}\AppxPackages" -Filter "*.msix" -Recurse |
+            Select-Object -First 1
+          $newName = $package.DirectoryName + "\" + $package.BaseName + "_${{ matrix.platform }}.msix"
+          Rename-Item -Path $package.FullName -NewName $newName
+          "MSIX_PATH=$newName" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
       - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: AppxPackages/**/*.msix
-

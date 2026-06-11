@@ -66,6 +66,12 @@ build_out/
 build_outApp*
 build_outViews*/
 
+# MSIX App Packages
+**/AppPackages/
+**/*.appx
+**/*.appxbundle
+**/*.msixbundle
+
 # User-specific files
 *.user
 *.suo
